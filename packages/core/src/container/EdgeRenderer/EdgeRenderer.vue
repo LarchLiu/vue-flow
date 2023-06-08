@@ -6,23 +6,19 @@ import ConnectionLine from '../../components/ConnectionLine/ConnectionLine.vue'
 import type { EdgeComponent, EdgeUpdatable, GraphEdge } from '../../types'
 import { Slots } from '../../context'
 import { useVueFlow } from '../../composables'
-import { ErrorCode, VueFlowError, groupEdgesByZLevel } from '../../utils'
+import { ErrorCode, VueFlowError, getEdgeZIndex } from '../../utils'
 import MarkerDefinitions from './MarkerDefinitions.vue'
 
 const slots = inject(Slots)
 
 const {
-  id,
   connectionStartHandle,
   nodesConnectable,
   edgesUpdatable,
   edgesFocusable,
   elementsSelectable,
-  getSelectedNodes,
   findNode,
-  edges,
   getEdges,
-  getNodesInitialized,
   getEdgeTypes,
   elevateEdgesOnSelect,
   dimensions,
@@ -49,15 +45,6 @@ const connectionLineVisible = controlledComputed(
       connectionStartHandle.value?.nodeId &&
       connectionStartHandle.value?.type
     ),
-)
-
-const groups = controlledComputed(
-  [
-    () => edges.value.map((e) => e.zIndex),
-    () => (elevateEdgesOnSelect.value ? [getSelectedNodes.value.length] : [0]),
-    () => (elevateEdgesOnSelect.value ? getNodesInitialized.value.map((n) => n.computedPosition.z) : []),
-  ],
-  () => groupEdgesByZLevel(getEdges.value, findNode, elevateEdgesOnSelect.value),
 )
 
 function selectable(edgeSelectable?: boolean) {
@@ -95,12 +82,6 @@ function getType(type?: string, template?: GraphEdge['template']) {
 
   return slot
 }
-
-function getTeleportTarget(edge: GraphEdge) {
-  const group = groups.value.find((g) => g.edges.includes(edge.id)) || { level: 0 }
-
-  return `[data-teleport="${id}-edges-${group.level}"]`
-}
 </script>
 
 <script lang="ts">
@@ -112,25 +93,26 @@ export default {
 
 <template>
   <template v-if="dimensions.width && dimensions.height">
-    <svg v-for="group of groups" :key="group.level" class="vue-flow__edges vue-flow__container" :style="{ zIndex: group.level }">
-      <MarkerDefinitions v-if="group.isMaxLevel" />
-
-      <g :data-teleport="`${id}-edges-${group.level}`" />
+    <svg class="vue-flow__edges vue-flow__container">
+      <MarkerDefinitions />
     </svg>
 
-    <template v-for="edge of getEdges" :key="edge.id">
-      <Teleport :to="getTeleportTarget(edge)">
-        <EdgeWrapper
-          :id="edge.id"
-          :edge="edge"
-          :type="getType(edge.type, edge.template)"
-          :name="edge.type || 'default'"
-          :selectable="selectable(edge.selectable)"
-          :updatable="updatable(edge.updatable)"
-          :focusable="focusable(edge.focusable)"
-        />
-      </Teleport>
-    </template>
+    <svg
+      v-for="edge of getEdges"
+      :key="edge.id"
+      class="vue-flow__edges vue-flow__container"
+      :style="{ zIndex: getEdgeZIndex(edge, findNode, elevateEdgesOnSelect) }"
+    >
+      <EdgeWrapper
+        :id="edge.id"
+        :edge="edge"
+        :type="getType(edge.type, edge.template)"
+        :name="edge.type || 'default'"
+        :selectable="selectable(edge.selectable)"
+        :updatable="updatable(edge.updatable)"
+        :focusable="focusable(edge.focusable)"
+      />
+    </svg>
 
     <svg v-if="connectionLineVisible && !!sourceNode" class="vue-flow__edges vue-flow__connectionline vue-flow__container">
       <ConnectionLine :source-node="sourceNode" />
