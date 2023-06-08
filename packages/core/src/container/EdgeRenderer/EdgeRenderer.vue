@@ -94,6 +94,12 @@ function getType(type?: string, template?: GraphEdge['template']) {
 
   return slot
 }
+
+function getTeleportTarget(edge: GraphEdge) {
+  const group = groups.value.find((g) => g.edges.includes(edge.id)) || { level: 0 }
+
+  return `[data-teleport="edges-${group.level}"]`
+}
 </script>
 
 <script lang="ts">
@@ -105,18 +111,16 @@ export default {
 
 <template>
   <template v-if="dimensions.width && dimensions.height">
-    <svg
-      v-for="group of groups"
-      :key="group.level"
-      class="vue-flow__edges vue-flow__container"
-      :style="`z-index: ${group.level}`"
-    >
+    <svg v-for="group of groups" :key="group.level" class="vue-flow__edges vue-flow__container" :style="{ zIndex: group.level }">
       <MarkerDefinitions v-if="group.isMaxLevel" />
-      <g>
+
+      <g :data-teleport="`edges-${group.level}`" />
+    </svg>
+
+    <template v-for="edge of getEdges" :key="edge.id">
+      <Teleport :to="getTeleportTarget(edge)">
         <EdgeWrapper
-          v-for="edge of group.edges"
           :id="edge.id"
-          :key="edge.id"
           :edge="edge"
           :type="getType(edge.type, edge.template)"
           :name="edge.type || 'default'"
@@ -124,8 +128,8 @@ export default {
           :updatable="updatable(edge.updatable)"
           :focusable="focusable(edge.focusable)"
         />
-      </g>
-    </svg>
+      </Teleport>
+    </template>
 
     <svg v-if="connectionLineVisible && !!sourceNode" class="vue-flow__edges vue-flow__connectionline vue-flow__container">
       <ConnectionLine :source-node="sourceNode" />

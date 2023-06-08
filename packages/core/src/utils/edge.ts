@@ -134,7 +134,7 @@ export function isEdgeVisible({
 export function groupEdgesByZLevel(edges: GraphEdge[], findNode: Actions['findNode'], elevateEdgesOnSelect = false) {
   let maxLevel = -1
 
-  const levelLookup = edges.reduce<Record<string, GraphEdge[]>>((tree, edge) => {
+  const levelLookup = edges.reduce<Record<string, string[]>>((tree, edge) => {
     const hasZIndex = isNumber(edge.zIndex)
     let z = hasZIndex ? edge.zIndex! : 0
 
@@ -150,9 +150,9 @@ export function groupEdgesByZLevel(edges: GraphEdge[], findNode: Actions['findNo
     }
 
     if (tree[z]) {
-      tree[z].push(edge)
+      tree[z].push(edge.id)
     } else {
-      tree[z] = [edge]
+      tree[z] = [edge.id]
     }
 
     maxLevel = z > maxLevel ? z : maxLevel
