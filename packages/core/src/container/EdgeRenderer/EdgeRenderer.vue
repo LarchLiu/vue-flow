@@ -12,6 +12,7 @@ import MarkerDefinitions from './MarkerDefinitions.vue'
 const slots = inject(Slots)
 
 const {
+  id,
   connectionStartHandle,
   nodesConnectable,
   edgesUpdatable,
@@ -98,7 +99,7 @@ function getType(type?: string, template?: GraphEdge['template']) {
 function getTeleportTarget(edge: GraphEdge) {
   const group = groups.value.find((g) => g.edges.includes(edge.id)) || { level: 0 }
 
-  return `[data-teleport="edges-${group.level}"]`
+  return `[data-teleport="${id}-edges-${group.level}"]`
 }
 </script>
 
@@ -114,7 +115,7 @@ export default {
     <svg v-for="group of groups" :key="group.level" class="vue-flow__edges vue-flow__container" :style="{ zIndex: group.level }">
       <MarkerDefinitions v-if="group.isMaxLevel" />
 
-      <g :data-teleport="`edges-${group.level}`" />
+      <g :data-teleport="`${id}-edges-${group.level}`" />
     </svg>
 
     <template v-for="edge of getEdges" :key="edge.id">
